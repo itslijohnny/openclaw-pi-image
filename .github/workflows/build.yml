@@ -1,0 +1,79 @@
+name: Build OpenClaw Pi Image
+
+on:
+  workflow_dispatch:
+    inputs:
+      openclaw_version:
+        description: OpenClaw npm version. Leave empty to use latest.
+        required: false
+        type: string
+  schedule:
+    - cron: "17 10 * * *"
+
+permissions:
+  contents: read
+  packages: write
+
+env:
+  IMAGE_NAME: ghcr.io/${{ github.repository_owner }}/openclaw-pi
+
+jobs:
+  discover:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+    steps:
+      - name: Resolve OpenClaw version
+        id: version
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ -n "${{ inputs.openclaw_version || '' }}" ]]; then
+            version="${{ inputs.openclaw_version }}"
+          else
+            version="$(npm view openclaw version)"
+          fi
+          echo "version=${version}" >> "$GITHUB_OUTPUT"
+          echo "OpenClaw version: ${version}"
+
+  build:
+    needs: discover
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          platforms: linux/arm64
+          push: true
+          build-args: |
+            OPENCLAW_VERSION=${{ needs.discover.outputs.version }}
+          tags: |
+            ${{ env.IMAGE_NAME }}:${{ needs.discover.outputs.version }}
+            ${{ env.IMAGE_NAME }}:latest
+          labels: |
+            org.opencontainers.image.title=openclaw-pi
+            org.opencontainers.image.description=OpenClaw Gateway for Raspberry Pi arm64
+            org.opencontainers.image.version=${{ needs.discover.outputs.version }}
+            org.opencontainers.image.source=https://github.com/${{ github.repository }}
+
+      - name: Smoke test image
+        run: |
+          set -euo pipefail
+          docker run --rm --platform linux/arm64 "${IMAGE_NAME}:${{ needs.discover.outputs.version }}" openclaw --version

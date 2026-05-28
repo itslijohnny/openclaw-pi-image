@@ -1,0 +1,30 @@
+services:
+  openclaw-gateway:
+    image: ghcr.io/YOUR_GITHUB_USER/openclaw-pi:latest
+    container_name: openclaw-gateway
+    restart: unless-stopped
+    user: "1000:1000"
+    environment:
+      HOME: /home/node
+      NODE_EXTRA_CA_CERTS: /etc/ssl/certs/ca-certificates.crt
+      OPENCLAW_GATEWAY_PASSWORD: ${OPENCLAW_GATEWAY_PASSWORD}
+    volumes:
+      - ./state:/home/node/.openclaw
+      - ./config:/home/node/.config/openclaw
+      # Optional later for Obsidian vault:
+      # - /home/johnny/gdrive:/home/node/gdrive:rshared
+    ports:
+      - "${OPENCLAW_BIND_ADDRESS:-127.0.0.1}:${OPENCLAW_HOST_PORT:-18089}:18789"
+    networks:
+      - openclaw_isolated
+
+networks:
+  openclaw_isolated:
+    name: openclaw_isolated
+    driver: bridge
+    driver_opts:
+      com.docker.network.bridge.name: br-openclaw
+    ipam:
+      config:
+        - subnet: 10.203.0.0/24
+          gateway: 10.203.0.1
