@@ -30,10 +30,15 @@ FROM cgr.dev/chainguard/wolfi-base:latest
 RUN apk add --no-cache nodejs git ripgrep ca-certificates && rm -rf /var/cache/apk/*
 
 COPY --from=builder /usr/local/lib/node_modules /usr/local/lib/node_modules
+# npm lives at /usr/lib/node_modules/npm in the node:*-dev base (not /usr/local),
+# so copy it explicitly so plugin installs (e.g. openclaw plugins install) work.
+COPY --from=builder /usr/lib/node_modules/npm /usr/local/lib/node_modules/npm
 
 RUN mkdir -p /usr/local/bin /home/node \
  && printf '#!/bin/sh\nexec node /usr/local/lib/node_modules/openclaw/dist/index.js "$@"\n' > /usr/local/bin/openclaw \
- && chmod 0755 /usr/local/bin/openclaw \
+ && printf '#!/bin/sh\nexec node /usr/local/lib/node_modules/npm/bin/npm-cli.js "$@"\n' > /usr/local/bin/npm \
+ && printf '#!/bin/sh\nexec node /usr/local/lib/node_modules/npm/bin/npx-cli.js "$@"\n' > /usr/local/bin/npx \
+ && chmod 0755 /usr/local/bin/openclaw /usr/local/bin/npm /usr/local/bin/npx \
  && chown -R 1000:1000 /home/node
 
 ENV NODE_ENV=production \
