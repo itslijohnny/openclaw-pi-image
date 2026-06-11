@@ -1,12 +1,12 @@
 ---
 name: pomodoro-coach
 description: >-
-  Coaches Johnny's focus loop with the Kindle 番茄钟 (pomodoro) dashboard. Triggers
-  when a pomodoro WORK block finishes — the dashboard sends a "work_done" event
-  (task + minutes) — and again when Johnny replies whether he finished. Asks if the
-  task is done, then either tells the dashboard to stop (return to 今日) or to run
-  another block after the break, and marks the task done in the daily note. Use for
-  any message about a finished pomodoro / 番茄钟 / focus block, or a "work_done" event.
+  Drives Johnny's Kindle 番茄钟 (pomodoro) focus loop. Use whenever he asks to START a
+  pomodoro / 番茄钟 / focus timer for a task (e.g. "帮我定一个10分钟的番茄钟", "start a 25-min
+  focus on washing clothes") — call the dashboard to show the timer on the Kindle. Also
+  triggers when a WORK block finishes (a "work_done" event) and when Johnny replies
+  whether he finished: asks if the task is done, then tells the dashboard to stop
+  (return to 今日) or run another block, and marks the task done in the daily note.
 metadata:
   openclaw:
     skillKey: pomodoro-coach
@@ -22,12 +22,17 @@ is a dumb timer — **you** own the conversation and the daily-note bookkeeping.
 ## Operating contract (read first)
 
 - **Dashboard API base:** `http://192.168.68.89:9878` (the PC daemon, `kindle-dashboard`).
-  Two endpoints you may call:
+  Three endpoints you may call:
+  - `POST /api/pomodoro/start` with JSON `{"minutes": <int>, "task": "<text>"}` —
+    **START a focus block now.** Use this when Johnny asks to set/start a 番茄钟 for
+    something. It shows the timer + task on the Kindle immediately. THIS is what makes
+    the Kindle display a timer.
   - `POST /api/pomodoro/done` — Johnny **finished** the task. The dashboard returns
-    the Kindle to the 今日 planner when the current break ends.
+    the Kindle to the 今日 planner when the current break ends. **Only** as a reply to a
+    work_done event — never to start.
   - `POST /api/pomodoro/next` with JSON `{"minutes": <int?>, "task": "<text?>"}` —
-    Johnny is **not finished**. The dashboard starts another work block when the break
-    ends. Omit `minutes`/`task` to repeat the same length and task.
+    Johnny is **not finished**, run another block when the current break ends. **Only**
+    as a reply to a work_done event — it does nothing if no block is mid-break.
 - **Timing:** the dashboard acts when the **break countdown ends**. You have the whole
   break (~5 min) to get Johnny's answer. If he doesn't answer in time, the dashboard
   defaults to returning to 今日 — so **no answer = nothing breaks**.
@@ -53,6 +58,17 @@ When a work block ends, you are run with a message containing a JSON object like
 `task` = what he was working on, `minutes` = block length, `cycles` = completed blocks.
 
 ## What to do
+
+### Step 0 — when Johnny asks to START a 番茄钟
+If he asks to set/start a focus block (e.g. "帮我定一个10分钟的番茄钟", "start a 25-min
+focus on 洗衣服"), figure out the **minutes** and the **task** from what he said, then:
+
+1. `POST /api/pomodoro/start` with `{"minutes": <int>, "task": "<task>"}`.
+   Example: `curl -fsS -X POST http://192.168.68.89:9878/api/pomodoro/start -H 'Content-Type: application/json' -d '{"minutes":10,"task":"洗衣服"}'`
+   (If he gives no length, default to 25.) This shows the timer + task on the Kindle.
+2. Confirm briefly: "🍅 已开始 10 分钟番茄钟,加油「洗衣服」。"
+
+Do **not** use `/next` or `/done` to start — those are only replies to a work_done event.
 
 ### Step 1 — when you get a `work_done` event
 Send Johnny one short check-in, naming the task, e.g.:
