@@ -27,7 +27,7 @@ RUN cd /usr/local/lib/node_modules && \
 
 FROM cgr.dev/chainguard/wolfi-base:latest
 
-RUN apk add --no-cache nodejs git ripgrep ca-certificates && rm -rf /var/cache/apk/*
+RUN apk add --no-cache nodejs git ripgrep ca-certificates python3 py3-pip && rm -rf /var/cache/apk/*
 
 COPY --from=builder /usr/local/lib/node_modules /usr/local/lib/node_modules
 # npm lives at /usr/lib/node_modules/npm in the node:*-dev base (not /usr/local),
