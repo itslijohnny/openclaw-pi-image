@@ -77,3 +77,4 @@ jobs:
         run: |
           set -euo pipefail
           docker run --rm --platform linux/arm64 "${IMAGE_NAME}:${{ needs.discover.outputs.version }}" openclaw --version
+          docker run --rm --platform linux/arm64 "${IMAGE_NAME}:${{ needs.discover.outputs.version }}" tectonic --version

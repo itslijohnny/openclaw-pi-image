@@ -29,6 +29,15 @@ FROM cgr.dev/chainguard/wolfi-base:latest
 
 RUN apk add --no-cache nodejs git ripgrep ca-certificates python3 py3-pip curl && rm -rf /var/cache/apk/*
 
+# LaTeX engine for compiling resumes/docs. The free Wolfi repo has no texlive
+# package, so use tectonic: a single static aarch64 binary (self-fetches TeX
+# packages on first run). Resume templates wrap pdfTeX-only primitives so the
+# same resume.tex compiles under tectonic. See build.sh's tectonic fallback.
+ARG TECTONIC_VERSION=0.16.9
+RUN curl -fsSL "https://github.com/tectonic-typesetting/tectonic/releases/download/tectonic%40${TECTONIC_VERSION}/tectonic-${TECTONIC_VERSION}-aarch64-unknown-linux-musl.tar.gz" \
+      | tar -xz -C /usr/local/bin tectonic \
+ && chmod 0755 /usr/local/bin/tectonic
+
 COPY --from=builder /usr/local/lib/node_modules /usr/local/lib/node_modules
 # npm lives at /usr/lib/node_modules/npm in the node:*-dev base (not /usr/local),
 # so copy it explicitly so plugin installs (e.g. openclaw plugins install) work.
