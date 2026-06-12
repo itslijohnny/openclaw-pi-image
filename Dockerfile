@@ -34,7 +34,8 @@ RUN apk add --no-cache nodejs git ripgrep ca-certificates python3 py3-pip curl &
 # packages on first run). Resume templates wrap pdfTeX-only primitives so the
 # same resume.tex compiles under tectonic. See build.sh's tectonic fallback.
 ARG TECTONIC_VERSION=0.16.9
-RUN curl -fsSL "https://github.com/tectonic-typesetting/tectonic/releases/download/tectonic%40${TECTONIC_VERSION}/tectonic-${TECTONIC_VERSION}-aarch64-unknown-linux-musl.tar.gz" \
+RUN mkdir -p /usr/local/bin \
+ && curl -fsSL "https://github.com/tectonic-typesetting/tectonic/releases/download/tectonic%40${TECTONIC_VERSION}/tectonic-${TECTONIC_VERSION}-aarch64-unknown-linux-musl.tar.gz" \
       | tar -xz -C /usr/local/bin tectonic \
  && chmod 0755 /usr/local/bin/tectonic
 
