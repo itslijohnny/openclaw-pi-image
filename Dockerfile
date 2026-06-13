@@ -27,7 +27,7 @@ RUN cd /usr/local/lib/node_modules && \
 
 FROM cgr.dev/chainguard/wolfi-base:latest
 
-RUN apk add --no-cache nodejs git ripgrep ca-certificates python3 py3-pip curl && rm -rf /var/cache/apk/*
+RUN apk add --no-cache nodejs git ripgrep ca-certificates python3 py3-pip curl tzdata && rm -rf /var/cache/apk/*
 
 # LaTeX engine for compiling resumes/docs. The free Wolfi repo has no texlive
 # package, so use tectonic: a single static aarch64 binary (self-fetches TeX
