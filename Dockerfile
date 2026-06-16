@@ -27,7 +27,11 @@ RUN cd /usr/local/lib/node_modules && \
 
 FROM cgr.dev/chainguard/wolfi-base:latest
 
-RUN apk add --no-cache nodejs git ripgrep ca-certificates python3 py3-pip curl tzdata && rm -rf /var/cache/apk/*
+# ffmpeg: required by the Discord/TTS outbound path to encode reply audio
+# (mp3 -> opus voice messages). Without it, voice-message replies fail with
+# "ffmpeg not found in trusted system directories". apk installs to /usr/bin
+# (a trusted binary dir). Also used by audio media-understanding conversions.
+RUN apk add --no-cache nodejs git ripgrep ca-certificates python3 py3-pip curl tzdata ffmpeg && rm -rf /var/cache/apk/*
 
 # LaTeX engine for compiling resumes/docs. The free Wolfi repo has no texlive
 # package, so use tectonic: a single static aarch64 binary (self-fetches TeX
